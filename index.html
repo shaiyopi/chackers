@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Classic Checkers (Draughts) - International Flying King & Huffing Rules</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
+  <!-- Mobile PWA Meta & Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1e293b">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Checkers">
+  <link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header / Brand -->
+    <header class="app-header">
+      <div class="logo-area">
+        <div class="crown-icon">👑</div>
+        <div>
+          <h1>ROYAL CHECKERS</h1>
+          <p class="subtitle">Flying Kings & Huffing Rules (חוק שריפת חייל / חובה לאכול)</p>
+        </div>
+      </div>
+      <div class="header-controls">
+        <button id="game-mode-btn" class="btn btn-mode" title="Change Mode">🎮 Mode: <span id="mode-label">PvP</span></button>
+        <button id="rules-btn" class="btn btn-secondary" title="View Game Rules">📜 Rules</button>
+        <button id="reset-btn" class="btn btn-primary" title="Restart Game">🔄 New Game</button>
+      </div>
+    </header>
+
+    <!-- Main Game Workspace -->
+    <main class="game-layout">
+      <!-- Left / Top Info: Player 1 (Red / White) -->
+      <section class="player-panel player-red" id="panel-player1">
+        <div class="player-badge">
+          <div class="piece-avatar red-avatar"></div>
+          <div class="player-meta">
+            <span class="player-tag">Player 1</span>
+            <span class="player-name">Red / White</span>
+          </div>
+        </div>
+        <div class="player-stats">
+          <div class="stat-card">
+            <span class="stat-label">Captured</span>
+            <span class="stat-value" id="p1-captured-count">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Kings</span>
+            <span class="stat-value" id="p1-kings-count">0</span>
+          </div>
+        </div>
+        <div class="graveyard" id="p1-graveyard" title="Enemy pieces taken by Player 1"></div>
+      </section>
+
+      <!-- Center: Board & Overlays -->
+      <section class="board-wrapper">
+        <!-- Turn Status Banner -->
+        <div class="turn-banner" id="turn-banner">
+          <div class="turn-indicator-dot" id="turn-dot"></div>
+          <span id="turn-text">White's Turn to Move</span>
+          <span class="must-jump-tag hidden" id="must-jump-tag">⚠️ Capture Available!</span>
+        </div>
+
+        <!-- The Checkers Board -->
+        <div class="board-frame">
+          <div class="board-coordinates board-coords-top">
+            <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span>
+          </div>
+          <div class="board-with-side-coords">
+            <div class="board-coordinates board-coords-left">
+              <span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span>
+            </div>
+            <div id="checkers-board" class="checkers-board" aria-label="Checkers Board">
+              <!-- Squares dynamically injected by board.js -->
+            </div>
+            <div class="board-coordinates board-coords-right">
+              <span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span>
+            </div>
+          </div>
+          <div class="board-coordinates board-coords-bottom">
+            <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span>
+          </div>
+        </div>
+
+        <!-- Huffing Action / Decision Bar (Appears when opponent attempts normal move while jump was available) -->
+        <div class="huff-decision-card hidden" id="huff-decision-card">
+          <div class="huff-header">
+            <span class="huff-icon">🔥</span>
+            <div>
+              <h3 id="huff-title">Missed Capture Alert! (שריפת חייל)</h3>
+              <p id="huff-desc">The opponent made a non-capturing move despite having a mandatory capture available.</p>
+            </div>
+          </div>
+          <div class="huff-actions">
+            <button id="btn-burn-piece" class="btn btn-burn">🔥 Burn Piece (Huff)</button>
+            <button id="btn-force-jump" class="btn btn-insist">⚡ Demand Mandatory Jump</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right / Bottom Info: Player 2 (Black) -->
+      <section class="player-panel player-black" id="panel-player2">
+        <div class="player-badge">
+          <div class="piece-avatar black-avatar"></div>
+          <div class="player-meta">
+            <span class="player-tag">Player 2</span>
+            <span class="player-name">Black</span>
+          </div>
+        </div>
+        <div class="player-stats">
+          <div class="stat-card">
+            <span class="stat-label">Captured</span>
+            <span class="stat-value" id="p2-captured-count">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Kings</span>
+            <span class="stat-value" id="p2-kings-count">0</span>
+          </div>
+        </div>
+        <div class="graveyard" id="p2-graveyard" title="Enemy pieces taken by Player 2"></div>
+      </section>
+    </main>
+
+    <!-- Game Log & Audio Toggles footer -->
+    <footer class="app-footer">
+      <div class="status-feed" id="status-feed">
+        <span class="feed-badge">LOG:</span>
+        <span id="latest-log-text">Game started. Red/White moves first.</span>
+      </div>
+      <div class="quick-options">
+        <label class="toggle-control" title="Toggle Sound Effects">
+          <input type="checkbox" id="sound-toggle" checked>
+          <span class="toggle-label">🔊 Audio FX</span>
+        </label>
+        <button id="undo-btn" class="btn btn-outline" disabled title="Undo last action">↩️ Undo</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Game Mode Selector Modal -->
+  <div class="modal-backdrop hidden" id="mode-modal">
+    <div class="modal-card mode-card">
+      <div class="modal-header">
+        <h2>Choose Game Mode</h2>
+        <button class="modal-close" id="close-mode-btn">&times;</button>
+      </div>
+      <div class="modal-body mode-modal-body">
+        <div class="mode-selection-group">
+          <label class="mode-option" id="opt-mode-pvp">
+            <input type="radio" name="game-mode" value="pvp" checked>
+            <div class="mode-info">
+              <span class="mode-title">👥 Player vs Player</span>
+              <span class="mode-desc">Play locally with a friend on this computer</span>
+            </div>
+          </label>
+          <label class="mode-option" id="opt-mode-ai">
+            <input type="radio" name="game-mode" value="ai">
+            <div class="mode-info">
+              <span class="mode-title">🤖 Player vs Computer (AI)</span>
+              <span class="mode-desc">Smart Minimax opponent with Alpha-Beta pruning</span>
+            </div>
+          </label>
+        </div>
+
+        <!-- AI Configuration (Revealed when AI selected) -->
+        <div class="ai-config-panel hidden" id="ai-config-panel">
+          <h3>Your Playing Color:</h3>
+          <div class="color-options">
+            <label class="color-choice" id="choice-color-red">
+              <input type="radio" name="player-color" value="red" checked>
+              <div class="choice-visual red-visual">
+                <div class="piece-avatar red-avatar"></div>
+                <span>Play as Red/White (Moves First)</span>
+              </div>
+            </label>
+            <label class="color-choice" id="choice-color-black">
+              <input type="radio" name="player-color" value="black">
+              <div class="choice-visual black-visual">
+                <div class="piece-avatar black-avatar"></div>
+                <span>Play as Black (AI Moves First)</span>
+              </div>
+            </label>
+          </div>
+
+          <div class="difficulty-group">
+            <label for="ai-difficulty">AI Search Depth / Difficulty:</label>
+            <select id="ai-difficulty" class="custom-select">
+              <option value="6">Normal (Depth 6 + Quiescence)</option>
+              <option value="8" selected>Grandmaster (Depth 8 + Quiescence)</option>
+              <option value="10">Deep Blue (Depth 10 - Maximum Power)</option>
+            </select>
+          </div>
+        </div>
+
+        <button id="apply-mode-btn" class="btn btn-primary btn-large">Start Match</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rules Modal Dialog -->
+  <div class="modal-backdrop hidden" id="rules-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Checkers Rules & Mechanics</h2>
+        <button class="modal-close" id="close-rules-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="rule-section">
+          <h3>1. Movement & Promotion</h3>
+          <p><strong>Regular Pieces:</strong> Move 1 diagonal step forward to an unoccupied dark square. Upon reaching the enemy's last row (row 8 for Red, row 1 for Black), the piece is crowned a <strong>King</strong>.</p>
+        </div>
+        <div class="rule-section">
+          <h3>2. Capturing (Jumping)</h3>
+          <p><strong>Regular Pieces:</strong> Can capture forward AND backward! If an adjacent square holds an enemy piece and the square immediately beyond is vacant, the piece jumps over and captures it.</p>
+          <p><strong>Multi-Jumps:</strong> If another jump is immediately available from the landing square, the capturing piece must continue jumping until no jumps remain.</p>
+        </div>
+        <div class="rule-section">
+          <h3>3. Flying Kings (מלכים מעופפים)</h3>
+          <p>Kings can move any number of empty squares diagonally in all 4 directions (like a chess Bishop).</p>
+          <p>Kings can also jump over an enemy piece from any distance along the diagonal, and land on any vacant square beyond that piece.</p>
+        </div>
+        <div class="rule-section">
+          <h3>4. Mandatory Jumps & Huffing (שריפת חייל)</h3>
+          <p>If any capture is available, the player is expected to jump. If a player attempts a regular step while ignoring an available capture, the opponent has two options:</p>
+          <ul>
+            <li><strong>Burn Piece (Huff):</strong> The offending piece is immediately removed (burned) from the board as penalty for missing the jump, and turn passes.</li>
+            <li><strong>Demand Mandatory Jump:</strong> The move is rolled back and the player is compelled to perform the capture.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Over Modal Dialog -->
+  <div class="modal-backdrop hidden" id="gameover-modal">
+    <div class="modal-card gameover-card">
+      <div class="trophy-icon">🏆</div>
+      <h2 id="winner-title">Victory!</h2>
+      <p id="winner-desc">Player 1 wins the game.</p>
+      <div class="gameover-actions">
+        <button id="gameover-restart-btn" class="btn btn-primary btn-large">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts: bundled stand-alone script to guarantee execution everywhere (file:// and http://) -->
+  <script src="bundle.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
