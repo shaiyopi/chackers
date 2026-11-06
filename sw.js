@@ -1,4 +1,4 @@
-const CACHE_NAME = 'royal-checkers-v1';
+const CACHE_NAME = 'royal-checkers-v2';
 const ASSETS = [
   './',
   './index.html',
