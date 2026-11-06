@@ -579,6 +579,44 @@ body {
   box-shadow: inset 0 0 14px var(--accent-gold);
 }
 
+.square.last-move-from {
+  background-color: #523b32 !important;
+  box-shadow: inset 0 0 15px rgba(251, 191, 36, 0.5) !important;
+  position: relative;
+}
+
+.square.last-move-from::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 2px dashed rgba(251, 191, 36, 0.7);
+  border-radius: 6px;
+  pointer-events: none;
+  animation: pulse-subtle 2s infinite ease-in-out;
+}
+
+.square.last-move-to {
+  background-color: #5c4338 !important;
+  box-shadow: inset 0 0 18px rgba(56, 189, 248, 0.75) !important;
+  position: relative;
+}
+
+.square.last-move-to::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 2px solid rgba(56, 189, 248, 0.9);
+  border-radius: 6px;
+  pointer-events: none;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+  animation: pulse-subtle 2s infinite ease-in-out;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
 .square.valid-move::after {
   content: '';
   position: absolute;

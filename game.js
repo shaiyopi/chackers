@@ -224,14 +224,26 @@ export class GameEngine {
         this.board[cap.captured.r][cap.captured.c] = null;
 
         let wasKing = movingPiece.isKing;
+        let becameKing = false;
         if (!wasKing) {
           if ((movingPiece.player === PLAYER.RED && cap.to.r === 7) ||
               (movingPiece.player === PLAYER.BLACK && cap.to.r === 0)) {
             movingPiece.isKing = true;
+            becameKing = true;
           }
         }
 
-        recurse(cap.to.r, cap.to.c, [...currentSteps, cap]);
+        // Rule: If a piece reaches the king row during a capture and promotes, its turn ends immediately.
+        // It cannot continue jumping as a king in the same turn.
+        if (becameKing) {
+          sequences.push({
+            steps: [...currentSteps, cap],
+            totalCaptures: currentSteps.length + 1,
+            finalPos: { r: cap.to.r, c: cap.to.c }
+          });
+        } else {
+          recurse(cap.to.r, cap.to.c, [...currentSteps, cap]);
+        }
 
         // Roll back board state
         movingPiece.isKing = wasKing;
@@ -484,6 +496,23 @@ export class GameEngine {
           piece.isKing = true;
           promoted = true;
         }
+      }
+
+      // Rule: If a piece reached the king row and promoted to a King, its turn ends immediately!
+      // It cannot continue jumping as a king in the same turn.
+      if (promoted) {
+        this.activePiecePos = null;
+        this.switchTurn();
+        this.checkGameOver();
+        return {
+          success: true,
+          isJump: true,
+          multiJumpAvailable: false,
+          promoted: true,
+          from,
+          to,
+          captured
+        };
       }
 
       // MANDATORY MULTI-JUMP: Check for continuation from the new square

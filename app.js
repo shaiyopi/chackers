@@ -16,6 +16,7 @@ class CheckersApp {
     this.selectedSquare = null; // { r, c }
     this.validMoves = []; // Array of destination moves for selected piece
     this.mustCaptureSquares = []; // Squares with pieces that must jump
+    this.lastAIMove = null; // { from: {r, c}, to: {r, c} } highlight squares for AI move
     
     this.dom = {
       board: document.getElementById('checkers-board'),
@@ -95,15 +96,23 @@ class CheckersApp {
     this.dom.undoBtn.addEventListener('click', () => {
       if (this.aiThinking) return;
       if (this.gameMode === 'ai') {
-        // In AI mode, undo twice to step back before AI's move
-        if (this.game.undo()) {
-          this.game.undo(); // Undo AI move as well
+        // In AI mode, if human is playing and has history:
+        // If human is currently in the middle of a multi-jump, undo single jump
+        if (this.game.activePiecePos) {
+          this.game.undo();
+        } else {
+          // Revert AI move, then revert human move (2 plies)
+          const undone1 = this.game.undo();
+          if (undone1 && this.game.currentPlayer !== this.humanColor) {
+            this.game.undo();
+          }
         }
       } else {
         this.game.undo();
       }
       this.selectedSquare = null;
       this.validMoves = [];
+      this.lastAIMove = null;
       this.log('Move undone.');
       this.render();
     });
@@ -194,6 +203,7 @@ class CheckersApp {
     this.game.initBoard();
     this.selectedSquare = null;
     this.validMoves = [];
+    this.lastAIMove = null;
     this.aiThinking = false;
     this.log(`New match started. ${this.gameMode === 'ai' ? 'Player vs AI' : 'Local PvP'}.`);
     this.render();
@@ -348,6 +358,7 @@ class CheckersApp {
       }
 
       // Execute AI move
+      this.lastAIMove = { from: { ...bestMove.from }, to: { ...bestMove.to } };
       const res = this.game.makeMove(bestMove.from, bestMove.to, { allowHuffDetection: false });
       
       if (res.isJump) {
@@ -387,6 +398,9 @@ class CheckersApp {
     const furtherCaptures = this.game.getCapturesForPiece(pos.r, pos.c);
     if (furtherCaptures.length > 0) {
       const nextJump = furtherCaptures[0];
+      if (this.lastAIMove) {
+        this.lastAIMove.to = { ...nextJump.to };
+      }
       const res = this.game.makeMove(pos, nextJump.to, { allowHuffDetection: false });
       sound.playCapture();
 
@@ -551,6 +565,15 @@ class CheckersApp {
 
         if (this.selectedSquare && this.selectedSquare.r === r && this.selectedSquare.c === c) {
           squareDiv.classList.add('selected');
+        }
+
+        if (this.lastAIMove) {
+          if (this.lastAIMove.from.r === r && this.lastAIMove.from.c === c) {
+            squareDiv.classList.add('last-move-from');
+          }
+          if (this.lastAIMove.to.r === r && this.lastAIMove.to.c === c) {
+            squareDiv.classList.add('last-move-to');
+          }
         }
 
         const isCaptureOrigin = this.mustCaptureSquares.some(pos => pos.r === r && pos.c === c);
